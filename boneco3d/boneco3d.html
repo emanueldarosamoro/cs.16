@@ -1,0 +1,1046 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Boneco 3D — Arma + Animações (Pular / Agachar)</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #0b0e14;
+      font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+      color: #e8ecf3;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    #app {
+      position: fixed;
+      inset: 0;
+    }
+    
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    
+    /* ---------- Top bar / title ---------- */
+    .title-bar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 14px 22px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 10;
+      background: linear-gradient(to bottom, rgba(6, 9, 16, 0.85), rgba(6, 9, 16, 0));
+    }
+    
+    .title-bar h1 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: 0.4px;
+      text-shadow: 0 2px 12px rgba(0, 0, 0, 0.7);
+    }
+    
+    .title-bar h1 span {
+      color: #4ea1ff;
+    }
+    
+    .badge {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 5px 11px;
+      border-radius: 20px;
+      background: rgba(78, 161, 255, 0.15);
+      border: 1px solid rgba(78, 161, 255, 0.4);
+      color: #7cbaff;
+    }
+    
+    /* ---------- Bottom control dock ---------- */
+    .dock {
+      position: fixed;
+      bottom: 26px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(16, 21, 33, 0.78);
+      border: 1px solid rgba(120, 150, 200, 0.18);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+      z-index: 20;
+    }
+    
+    .btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      min-width: 84px;
+      padding: 11px 16px;
+      border: 1px solid rgba(120, 150, 200, 0.2);
+      border-radius: 13px;
+      background: rgba(30, 38, 56, 0.6);
+      color: #cdd8ea;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      user-select: none;
+    }
+    
+    .btn .ico {
+      font-size: 20px;
+      line-height: 1;
+    }
+    
+    .btn .key {
+      font-size: 9px;
+      font-weight: 700;
+      opacity: 0.55;
+      letter-spacing: 1px;
+    }
+    
+    .btn:hover {
+      background: rgba(48, 62, 92, 0.85);
+      border-color: rgba(120, 170, 255, 0.5);
+      transform: translateY(-2px);
+    }
+    
+    .btn.active {
+      background: linear-gradient(180deg, rgba(78, 161, 255, 0.95), rgba(40, 110, 220, 0.95));
+      border-color: #7cbaff;
+      color: #fff;
+      box-shadow: 0 8px 26px rgba(60, 130, 240, 0.5);
+    }
+    
+    .btn:active {
+      transform: translateY(0) scale(0.97);
+    }
+    
+    .btn-download {
+      background: linear-gradient(180deg, rgba(46, 160, 110, 0.85), rgba(28, 120, 80, 0.85));
+      border-color: rgba(90, 220, 160, 0.45);
+      color: #eafff5;
+    }
+    
+    .btn-download:hover {
+      background: linear-gradient(180deg, rgba(58, 190, 130, 0.95), rgba(34, 140, 92, 0.95));
+      border-color: rgba(120, 240, 180, 0.7);
+    }
+    
+    /* ---------- Info panel ---------- */
+    .info {
+      position: fixed;
+      top: 70px;
+      left: 22px;
+      max-width: 250px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      background: rgba(16, 21, 33, 0.72);
+      border: 1px solid rgba(120, 150, 200, 0.16);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-size: 12px;
+      line-height: 1.7;
+      color: #a9b6cc;
+      z-index: 10;
+    }
+    
+    .info h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1.4px;
+      color: #7cbaff;
+      margin-bottom: 8px;
+    }
+    
+    .info .row {
+      display: flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    
+    .info kbd {
+      display: inline-block;
+      padding: 1px 7px;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      font-family: 'Consolas', monospace;
+      font-size: 11px;
+      color: #e8ecf3;
+    }
+    
+    .hint {
+      position: fixed;
+      bottom: 108px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 11px;
+      color: #7d8aa3;
+      letter-spacing: 0.4px;
+      z-index: 10;
+      pointer-events: none;
+    }
+    
+    /* ---------- Loader ---------- */
+    #loader {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: #0b0e14;
+      z-index: 100;
+      transition: opacity 0.6s ease;
+    }
+    
+    #loader.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    
+    .spinner {
+      width: 42px;
+      height: 42px;
+      border: 3px solid rgba(120, 170, 255, 0.2);
+      border-top-color: #4ea1ff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    #loader p {
+      font-size: 12px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #7d8aa3;
+    }
+    
+    @media (max-width: 620px) {
+      .info { display: none; }
+      .btn { min-width: 62px; padding: 9px 10px; }
+      .btn .ico { font-size: 17px; }
+      .title-bar h1 { font-size: 13px; }
+    }
+    
+  </style>
+  <script src="https://sites.super.myninja.ai/_assets/ninja-daytona-script.js"></script>
+</head>
+<body style="padding-top: 40px;">
+  <div id="app"><canvas data-engine="three.js r147" width="649" height="727" class="c513"></canvas></div><!-- Loader -->
+  <div id="loader" class="hidden">
+    <div class="spinner"></div>
+    <p>Carregando modelo 3D</p>
+  </div><!-- Title -->
+  <div class="title-bar">
+    <h1>Boneco 3D <span>• Arma + Animações</span></h1>
+    <div class="badge">Three.js</div>
+  </div><!-- Info panel -->
+  <div class="info">
+    <h3>Controles</h3>
+    <div class="row"><span>Pular</span><kbd>Espaço</kbd></div>
+    <div class="row"><span>Agachar</span><kbd>C</kbd></div>
+    <div class="row"><span>Andar</span><kbd>W</kbd></div>
+    <div class="row"><span>Girar câmera</span><kbd>Arrastar</kbd></div>
+    <div class="row"><span>Zoom</span><kbd>Scroll</kbd></div>
+  </div>
+  <div class="hint">Arraste para girar • Scroll para dar zoom</div><!-- Control dock -->
+  <div class="dock"><button data-action="idle" class="btn active"><span class="ico">🧍</span><span>Parado</span><span
+        class="key">IDLE</span></button><button data-action="walk" class="btn"><span
+        class="ico">🚶</span><span>Andar</span><span class="key">W</span></button><button data-action="jump"
+      class="btn"><span class="ico">🦘</span><span>Pular</span><span class="key">ESPAÇO</span></button><button
+      data-action="crouch" class="btn"><span class="ico">🧎</span><span>Agachar</span><span
+        class="key">C</span></button><button id="downloadBtn" class="btn btn-download"><span
+        class="ico">⬇️</span><span>Baixar .GLB</span><span class="key">MODELO</span></button></div>
+  <div>
+    <div id="ninja-daytona-banner" class="ninja-daytona-banner">
+      <div class="ninja-daytona-banner-preview-notice"><span>This website is a temporary preview.</span></div>
+      <div class="ninja-daytona-banner-connection-status"><span id="ninja-connection-spinner"
+          class="ninja-connection-status-spinner"></span><span id="ninja-connection-dot"
+          class="ninja-connection-status-dot connected"></span><span id="ninja-connection-text"
+          class="ninja-connection-status-text">Connected</span></div><button title="Close"
+        class="ninja-daytona-banner-close">×</button>
+    </div>
+  </div>
+  <div id="ninja-badge" class="ninja-badge"><a href="https://www.ninjatech.ai/product/super-ninja" target="_blank"><span
+        class="ninja-badge-emoji">🥷</span><span class="ninja-badge-text">Made by SuperNinja</span></a><button
+      title="Close" class="ninja-badge-close">×</button></div>
+  <div id="ninja-disconnect-overlay">
+    <div id="ninja-disconnect-overlay-text">Connection to Ninja computer lost.</div>
+    <div id="ninja-disconnect-overlay-text-2">Please reconnect to continue.</div><button
+      id="ninja-disconnect-reconnect-button"><span id="ninja-disconnect-spinner"></span><span
+        id="ninja-disconnect-button-text">Reconnect</span></button>
+  </div>
+  <script src="https://unpkg.com/three@0.147.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.147.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://unpkg.com/three@0.147.0/examples/js/exporters/GLTFExporter.js"></script>
+  <script>
+    /* ============================================================
+       BONECO 3D COM ARMA + ANIMAÇÕES (PULAR / AGACHAR / ANDAR)
+       Construído inteiramente com geometrias primitivas do Three.js.
+       ============================================================ */
+    
+    // ---------- Cena, câmera, renderer ----------
+    const app = document.getElementById('app');
+    
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b0e14);
+    scene.fog = new THREE.Fog(0x0b0e14, 9, 26);
+    
+    const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 100);
+    camera.position.set(2.6, 2.0, 4.2);
+    
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.05;
+    app.appendChild(renderer.domElement);
+    
+    // ---------- Controles de órbita ----------
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 1.0, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.07;
+    controls.minDistance = 1.8;
+    controls.maxDistance = 12;
+    controls.maxPolarAngle = Math.PI * 0.52;
+    controls.update();
+    
+    // ---------- Iluminação ----------
+    const hemi = new THREE.HemisphereLight(0x9db8ff, 0x1a1f2b, 0.85);
+    scene.add(hemi);
+    
+    const key = new THREE.DirectionalLight(0xffffff, 2.4);
+    key.position.set(4, 7, 5);
+    key.castShadow = true;
+    key.shadow.mapSize.set(2048, 2048);
+    key.shadow.camera.near = 0.5;
+    key.shadow.camera.far = 30;
+    key.shadow.camera.left = -6;
+    key.shadow.camera.right = 6;
+    key.shadow.camera.top = 6;
+    key.shadow.camera.bottom = -6;
+    key.shadow.bias = -0.0004;
+    scene.add(key);
+    
+    const rim = new THREE.DirectionalLight(0x4ea1ff, 1.6);
+    rim.position.set(-5, 3, -6);
+    scene.add(rim);
+    
+    const fill = new THREE.PointLight(0xff9d5c, 0.6, 20);
+    fill.position.set(-3, 2, 3);
+    scene.add(fill);
+    
+    // ---------- Chão ----------
+    const groundMat = new THREE.MeshStandardMaterial({
+      color: 0x1b2130,
+      roughness: 0.95,
+      metalness: 0.0,
+    });
+    const ground = new THREE.Mesh(new THREE.CircleGeometry(14, 64), groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.receiveShadow = true;
+    scene.add(ground);
+    
+    const grid = new THREE.GridHelper(28, 56, 0x2f3d55, 0x1d2534);
+    grid.material.transparent = true;
+    grid.material.opacity = 0.55;
+    grid.position.y = 0.002;
+    scene.add(grid);
+    
+    // ---------- Materiais do personagem ----------
+    const M = {
+      skin:   new THREE.MeshStandardMaterial({ color: 0xf0c088, roughness: 0.65, metalness: 0.02 }),
+      shirt:  new THREE.MeshStandardMaterial({ color: 0x3d7bd6, roughness: 0.7,  metalness: 0.05 }),
+      shirt2: new THREE.MeshStandardMaterial({ color: 0x2f63b0, roughness: 0.7,  metalness: 0.05 }),
+      pants:  new THREE.MeshStandardMaterial({ color: 0x2a2f3d, roughness: 0.85, metalness: 0.05 }),
+      shoe:   new THREE.MeshStandardMaterial({ color: 0x15181f, roughness: 0.6,  metalness: 0.15 }),
+      hair:   new THREE.MeshStandardMaterial({ color: 0x2a1d12, roughness: 0.85, metalness: 0.0 }),
+      metal:  new THREE.MeshStandardMaterial({ color: 0x2b2f36, roughness: 0.35, metalness: 0.9 }),
+      metal2: new THREE.MeshStandardMaterial({ color: 0x1c1f24, roughness: 0.45, metalness: 0.85 }),
+      grip:   new THREE.MeshStandardMaterial({ color: 0x3a2a1c, roughness: 0.9,  metalness: 0.0 }),
+      accent: new THREE.MeshStandardMaterial({ color: 0xff5a3c, roughness: 0.5,  metalness: 0.3,
+                                               emissive: 0xff3a1c, emissiveIntensity: 0.35 }),
+    };
+    
+    // ---------- Helpers de geometria ----------
+    function box(w, h, d, mat) {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function capsule(radius, length, mat) {
+      const m = new THREE.Mesh(new THREE.CapsuleGeometry(radius, length, 6, 14), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function sphere(radius, mat) {
+      const m = new THREE.Mesh(new THREE.SphereGeometry(radius, 20, 16), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    function cyl(rt, rb, h, mat) {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, 16), mat);
+      m.castShadow = true;
+      m.receiveShadow = true;
+      return m;
+    }
+    
+    // ============================================================
+    //  CONSTRUÇÃO DO PERSONAGEM
+    //  Hierarquia de "juntas" (Groups) para permitir animação.
+    // ============================================================
+    const character = new THREE.Group(); // raiz (movimento vertical = pulo/agachar)
+    scene.add(character);
+    
+    const J = {}; // referência a todas as juntas
+    
+    // Medidas base (metros)
+    const HIP_Y   = 1.02;   // altura do quadril (pés apoiados no chão)
+    const THIGH_L = 0.45;
+    const SHIN_L  = 0.45;
+    const UARM_L  = 0.32;
+    const FARM_L  = 0.30;
+    
+    // ----- Quadril (hips) -----
+    const hips = new THREE.Group();
+    hips.position.y = HIP_Y;
+    character.add(hips);
+    J.hips = hips;
+    
+    const pelvis = box(0.34, 0.22, 0.24, M.pants);
+    pelvis.position.y = -0.02;
+    hips.add(pelvis);
+    
+    // ----- Tronco (spine) -----
+    const spine = new THREE.Group();
+    spine.position.y = 0.06;
+    hips.add(spine);
+    J.spine = spine;
+    
+    // Torso: leve afunilamento usando cilindro
+    const torso = cyl(0.20, 0.17, 0.52, M.shirt);
+    torso.scale.z = 0.72;
+    torso.position.y = 0.30;
+    spine.add(torso);
+    
+    // Peito / detalhe de colete
+    const vest = box(0.40, 0.34, 0.26, M.shirt2);
+    vest.position.y = 0.34;
+    spine.add(vest);
+    
+    // Ombro direito esquerdo (esferas de apoio)
+    const shoulderCapL = sphere(0.085, M.shirt);
+    shoulderCapL.position.set(-0.235, 0.50, 0);
+    spine.add(shoulderCapL);
+    const shoulderCapR = sphere(0.085, M.shirt);
+    shoulderCapR.position.set(0.235, 0.50, 0);
+    spine.add(shoulderCapR);
+    
+    // ----- Pescoço e cabeça -----
+    const neck = cyl(0.055, 0.06, 0.08, M.skin);
+    neck.position.y = 0.60;
+    spine.add(neck);
+    
+    const head = new THREE.Group();
+    head.position.y = 0.68;
+    spine.add(head);
+    J.head = head;
+    
+    const skull = sphere(0.135, M.skin);
+    skull.scale.set(1, 1.12, 1.05);
+    skull.position.y = 0.08;
+    head.add(skull);
+    
+    // Cabelo (calota)
+    const hair = sphere(0.142, M.hair);
+    hair.scale.set(1, 0.85, 1.05);
+    hair.position.y = 0.10;
+    hair.geometry = new THREE.SphereGeometry(0.142, 20, 16, 0, Math.PI * 2, 0, Math.PI * 0.62);
+    head.add(hair);
+    
+    // Olhos
+    const eyeMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.2 });
+    const eyeGeo = new THREE.SphereGeometry(0.022, 12, 10);
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeL.position.set(-0.05, 0.09, 0.115);
+    head.add(eyeL);
+    const eyeR = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeR.position.set(0.05, 0.09, 0.115);
+    head.add(eyeR);
+    
+    // ----- Braço (função fábrica) -----
+    function buildArm(side) {
+      const s = side === 'L' ? -1 : 1;
+      const shoulder = new THREE.Group();
+      shoulder.position.set(0.235 * s, 0.50, 0);
+      spine.add(shoulder);
+    
+      const upper = capsule(0.055, UARM_L - 0.11, M.shirt);
+      upper.position.y = -UARM_L / 2;
+      shoulder.add(upper);
+    
+      const elbow = new THREE.Group();
+      elbow.position.y = -UARM_L;
+      shoulder.add(elbow);
+    
+      const fore = capsule(0.05, FARM_L - 0.10, M.skin);
+      fore.position.y = -FARM_L / 2;
+      elbow.add(fore);
+    
+      const hand = new THREE.Group();
+      hand.position.y = -FARM_L;
+      elbow.add(hand);
+    
+      const palm = box(0.075, 0.11, 0.06, M.skin);
+      palm.position.y = -0.05;
+      hand.add(palm);
+    
+      return { shoulder, elbow, hand };
+    }
+    
+    const armL = buildArm('L');
+    const armR = buildArm('R');
+    J.shoulderL = armL.shoulder; J.elbowL = armL.elbow; J.handL = armL.hand;
+    J.shoulderR = armR.shoulder; J.elbowR = armR.elbow; J.handR = armR.hand;
+    
+    // ----- Perna (função fábrica) -----
+    function buildLeg(side) {
+      const s = side === 'L' ? -1 : 1;
+      const hip = new THREE.Group();
+      hip.position.set(0.115 * s, -0.06, 0);
+      hips.add(hip);
+    
+      const thigh = capsule(0.085, THIGH_L - 0.17, M.pants);
+      thigh.position.y = -THIGH_L / 2;
+      hip.add(thigh);
+    
+      const knee = new THREE.Group();
+      knee.position.y = -THIGH_L;
+      hip.add(knee);
+    
+      const shin = capsule(0.068, SHIN_L - 0.14, M.pants);
+      shin.position.y = -SHIN_L / 2;
+      knee.add(shin);
+    
+      const ankle = new THREE.Group();
+      ankle.position.y = -SHIN_L;
+      knee.add(ankle);
+    
+      const foot = box(0.12, 0.07, 0.24, M.shoe);
+      foot.position.set(0, -0.02, 0.05);
+      ankle.add(foot);
+    
+      return { hip, knee, ankle };
+    }
+    
+    const legL = buildLeg('L');
+    const legR = buildLeg('R');
+    J.hipL = legL.hip; J.kneeL = legL.knee; J.ankleL = legL.ankle;
+    J.hipR = legR.hip; J.kneeR = legR.knee; J.ankleR = legR.ankle;
+    
+    // Nomes nas juntas (necessário para o exportador GLB mapear as animações)
+    character.name = 'character';
+    for (const k in J) { if (J[k] && J[k].isObject3D) J[k].name = k; }
+    
+    // ============================================================
+    //  ARMA (fuzil/pistola) presa à mão direita
+    // ============================================================
+    function buildGun() {
+      const g = new THREE.Group();
+    
+      // corpo principal
+      const body = box(0.055, 0.075, 0.34, M.metal);
+      body.position.z = 0.06;
+      g.add(body);
+    
+      // cano
+      const barrel = cyl(0.017, 0.017, 0.30, M.metal2);
+      barrel.rotation.x = Math.PI / 2;
+      barrel.position.set(0, 0.018, 0.34);
+      g.add(barrel);
+    
+      // boca do cano
+      const muzzle = cyl(0.024, 0.024, 0.05, M.metal2);
+      muzzle.rotation.x = Math.PI / 2;
+      muzzle.position.set(0, 0.018, 0.49);
+      g.add(muzzle);
+    
+      // guarda-mão / trilho
+      const rail = box(0.045, 0.03, 0.22, M.metal2);
+      rail.position.set(0, -0.055, 0.16);
+      g.add(rail);
+    
+      // empunhadura (grip)
+      const grip = box(0.05, 0.15, 0.07, M.grip);
+      grip.position.set(0, -0.11, -0.05);
+      grip.rotation.x = 0.28;
+      g.add(grip);
+    
+      // gatilho
+      const trigger = box(0.02, 0.05, 0.03, M.metal2);
+      trigger.position.set(0, -0.05, 0.02);
+      g.add(trigger);
+    
+      // carregador
+      const mag = box(0.045, 0.16, 0.06, M.metal2);
+      mag.position.set(0, -0.11, 0.10);
+      mag.rotation.x = -0.12;
+      g.add(mag);
+    
+      // coronha
+      const stock = box(0.05, 0.09, 0.16, M.grip);
+      stock.position.set(0, -0.01, -0.20);
+      g.add(stock);
+    
+      // mira
+      const sight = box(0.02, 0.035, 0.03, M.accent);
+      sight.position.set(0, 0.06, 0.20);
+      g.add(sight);
+    
+      return g;
+    }
+    
+    const gun = buildGun();
+    // Posiciona a arma na mão direita, empunhada apontando para frente.
+    // A rotação local foi calculada para que o cano aponte para +z (frente) na pose de mira.
+    gun.position.set(0.0, -0.11, 0.02);
+    gun.rotation.set(1.206, 0.716, 0.866);
+    J.handR.add(gun);
+    J.gun = gun;
+    
+    // Mão esquerda de apoio (segura o guarda-mão) — apenas posicionamento relativo
+    // (a mão esquerda é posada via animação para acompanhar)
+    
+    // ============================================================
+    //  SISTEMA DE POSES E ANIMAÇÃO
+    // ============================================================
+    // Uma "pose" é um objeto com rotações (radianos) por junta + deslocamentos da raiz.
+    const REST = {
+      rootY: 0, rootZ: 0,
+      hips:   [0, 0, 0],
+      spine:  [0, 0, 0],
+      head:   [0, 0, 0],
+      shoulderL: [0, 0, 0], elbowL: [0, 0, 0],
+      shoulderR: [0, 0, 0], elbowR: [0, 0, 0],
+      hipL: [0, 0, 0], kneeL: [0, 0, 0], ankleL: [0, 0, 0],
+      hipR: [0, 0, 0], kneeR: [0, 0, 0], ankleR: [0, 0, 0],
+    };
+    
+    // Pose "de combate": braços segurando a arma à frente (ângulos obtidos por IK)
+    const HOLD = {
+      shoulderR: [-0.20, -0.60, 0.60],
+      elbowR:    [-1.60,  1.40, 0.00],
+      shoulderL: [-1.00, -0.40, 0.60],
+      elbowL:    [ 0.00,  1.40, 0.00],
+      spine:     [0.05, -0.12, 0],
+      head:      [0.02, -0.12, 0],
+    };
+    
+    function clonePose(p) {
+      const o = {};
+      for (const k in p) o[k] = Array.isArray(p[k]) ? p[k].slice() : p[k];
+      return o;
+    }
+    function basePose() {
+      const p = clonePose(REST);
+      // aplica a pose de segurar a arma por cima do repouso
+      for (const k in HOLD) p[k] = HOLD[k].slice();
+      return p;
+    }
+    
+    // Pose atual (interpolada)
+    let current = basePose();
+    
+    function applyPose(p) {
+      character.position.y = p.rootY;
+      character.position.z = p.rootZ;
+      for (const name in J) {
+        if (p[name]) {
+          J[name].rotation.set(p[name][0], p[name][1], p[name][2]);
+        }
+      }
+    }
+    
+    function lerpPose(a, b, t) {
+      const out = {};
+      for (const k in b) {
+        if (Array.isArray(b[k])) {
+          out[k] = [
+            a[k][0] + (b[k][0] - a[k][0]) * t,
+            a[k][1] + (b[k][1] - a[k][1]) * t,
+            a[k][2] + (b[k][2] - a[k][2]) * t,
+          ];
+        } else {
+          out[k] = a[k] + (b[k] - a[k]) * t;
+        }
+      }
+      return out;
+    }
+    
+    // ---------- Estado de animação ----------
+    const state = {
+      mode: 'idle',      // idle | walk | crouch
+      jumping: false,
+      jumpT: 0,
+      crouching: false,
+      time: 0,
+      blend: 6,          // velocidade de transição
+    };
+    
+    const JUMP_DURATION = 1.15;
+    
+    // ---------- Poses-alvo procedurais ----------
+    function idlePose(t) {
+      const p = basePose();
+      const br = Math.sin(t * 1.6);
+      const br2 = Math.sin(t * 1.6 + 0.5);
+      p.spine[0] += br * 0.02;
+      p.head[0]  += br * 0.015;
+      p.head[1]  += Math.sin(t * 0.6) * 0.06;
+      p.rootY = br * 0.012;
+      p.shoulderR[0] += br2 * 0.03;
+      p.shoulderL[0] += br2 * 0.03;
+      p.hipL[1] = 0.03; p.hipR[1] = -0.03;
+      return p;
+    }
+    
+    function walkPose(t) {
+      const p = basePose();
+      const w = t * 6.0;                 // frequência dos passos
+      const s = Math.sin(w);
+      const c = Math.cos(w);
+    
+      // Pernas
+      p.hipL[0] = -0.55 * s;
+      p.hipR[0] =  0.55 * s;
+      p.kneeL[0] = 0.45 * (0.5 - 0.5 * Math.cos(w)) + 0.12;
+      p.kneeR[0] = 0.45 * (0.5 - 0.5 * Math.cos(w + Math.PI)) + 0.12;
+      p.ankleL[0] = 0.25 * s;
+      p.ankleR[0] = -0.25 * s;
+    
+      // Balanço do corpo e leve inclinação
+      p.rootY = Math.abs(Math.sin(w)) * 0.03 - 0.02;
+      p.spine[0] += 0.06;
+      p.hips[1] = 0.10 * s;
+      p.spine[1] += -0.08 * s;
+      p.head[1] += -0.05 * s;
+    
+      // Braços: leve balanço mantendo a arma empunhada
+      p.shoulderR[0] += 0.10 * c;
+      p.shoulderL[0] += -0.10 * c;
+    
+      return p;
+    }
+    
+    function crouchPose(t) {
+      const p = basePose();
+      const br = Math.sin(t * 1.6);
+      // Agachamento profundo
+      p.rootY = -0.30 + br * 0.008;
+      p.hipL[0] = -1.05; p.hipR[0] = -1.05;
+      p.kneeL[0] = 1.55; p.kneeR[0] = 1.55;
+      p.ankleL[0] = -0.55; p.ankleR[0] = -0.55;
+      p.hipL[1] = 0.16; p.hipR[1] = -0.16;
+      // Tronco inclinado para frente
+      p.spine[0] += 0.34;
+      p.head[0] += -0.20;
+      // Braços levemente recolhidos, arma continua apontando à frente
+      p.shoulderR[0] += -0.12;
+      p.elbowR[0] += -0.12;
+      p.shoulderL[0] += -0.12;
+      p.elbowL[0] += -0.12;
+      return p;
+    }
+    
+    // ---------- Animação de pulo (keyframes) ----------
+    // sh/el são deslocamentos relativos à pose de mira (HOLD)
+    const JUMP_KEYS = [
+      // t,   rootY,  hip,   knee,  ankle, spine, sh,    el
+      { t: 0.00, rootY:  0.00, hip:  0.00, knee: 0.10, ankle:  0.00, spine:  0.00, sh:  0.00, el:  0.00 },
+      { t: 0.14, rootY: -0.20, hip: -0.95, knee: 1.40, ankle: -0.45, spine:  0.35, sh:  0.30, el:  0.20 }, // agacha (impulso)
+      { t: 0.28, rootY:  0.10, hip: -0.15, knee: 0.15, ankle:  0.35, spine: -0.10, sh: -0.35, el:  0.10 }, // estica (salto)
+      { t: 0.50, rootY:  0.62, hip: -0.75, knee: 1.10, ankle:  0.15, spine:  0.05, sh: -0.15, el:  0.20 }, // ápice (pernas recolhidas)
+      { t: 0.72, rootY:  0.30, hip: -0.30, knee: 0.35, ankle:  0.20, spine:  0.05, sh: -0.05, el:  0.10 }, // descida
+      { t: 0.86, rootY: -0.22, hip: -0.95, knee: 1.45, ankle: -0.45, spine:  0.35, sh:  0.25, el:  0.15 }, // aterrissagem
+      { t: 1.00, rootY:  0.00, hip:  0.00, knee: 0.10, ankle:  0.00, spine:  0.00, sh:  0.00, el:  0.00 }, // volta ao normal
+    ];
+    
+    function smooth(t) { return t * t * (3 - 2 * t); }
+    
+    function jumpPose(prog) {
+      const p = basePose();
+      let a = JUMP_KEYS[0], b = JUMP_KEYS[JUMP_KEYS.length - 1];
+      for (let i = 0; i < JUMP_KEYS.length - 1; i++) {
+        if (prog >= JUMP_KEYS[i].t && prog <= JUMP_KEYS[i + 1].t) {
+          a = JUMP_KEYS[i]; b = JUMP_KEYS[i + 1];
+          break;
+        }
+      }
+      const span = (b.t - a.t) || 1;
+      const k = smooth(Math.min(1, Math.max(0, (prog - a.t) / span)));
+      const L = (x, y) => x + (y - x) * k;
+    
+      p.rootY = L(a.rootY, b.rootY);
+      p.hipL[0] = p.hipR[0] = L(a.hip, b.hip);
+      p.kneeL[0] = p.kneeR[0] = L(a.knee, b.knee);
+      p.ankleL[0] = p.ankleR[0] = L(a.ankle, b.ankle);
+      p.spine[0] += L(a.spine, b.spine);
+      p.shoulderR[0] += L(a.sh, b.sh);
+      p.elbowR[0] += L(a.el, b.el);
+      p.shoulderL[0] += L(a.sh, b.sh);
+      p.elbowL[0] += L(a.el, b.el);
+      // pernas ligeiramente afastadas no ar
+      p.hipL[1] = 0.10; p.hipR[1] = -0.10;
+      return p;
+    }
+    
+    // ============================================================
+    //  EXPORTAÇÃO GLB (bake das animações procedurais em keyframes)
+    // ============================================================
+    const CLIP_DEFS = [
+      { name: 'Idle',   duration: 2 * Math.PI / 1.6, loop: true,  fn: (t) => idlePose(t) },
+      { name: 'Walk',   duration: 2 * Math.PI / 6.0, loop: true,  fn: (t) => walkPose(t) },
+      { name: 'Jump',   duration: JUMP_DURATION,     loop: false, fn: (t) => jumpPose(Math.min(t / JUMP_DURATION, 1)) },
+      { name: 'Crouch', duration: 2 * Math.PI / 1.6, loop: true,  fn: (t) => crouchPose(t) },
+    ];
+    
+    function bakeClip(def, fps = 30) {
+      const jointNames = Object.keys(J).filter((k) => k !== 'gun');
+      const steps = Math.max(2, Math.round(def.duration * fps));
+      const times = [];
+      const samples = [];
+    
+      for (let i = 0; i <= steps; i++) {
+        const t = (i / steps) * def.duration;
+        applyPose(def.fn(t));
+        character.updateMatrixWorld(true);
+        const quats = {};
+        for (const k of jointNames) quats[k] = J[k].quaternion.clone();
+        samples.push({ t, quats, pos: character.position.clone() });
+        times.push(t);
+      }
+    
+      const tracks = [];
+      for (const k of jointNames) {
+        const vals = [];
+        for (const s of samples) {
+          const q = s.quats[k];
+          vals.push(q.x, q.y, q.z, q.w);
+        }
+        tracks.push(new THREE.QuaternionKeyframeTrack(`${k}.quaternion`, times, vals));
+      }
+      const posVals = [];
+      for (const s of samples) posVals.push(s.pos.x, s.pos.y, s.pos.z);
+      tracks.push(new THREE.VectorKeyframeTrack('character.position', times, posVals));
+    
+      return new THREE.AnimationClip(def.name, def.duration, tracks);
+    }
+    
+    function downloadGLB() {
+      const clips = CLIP_DEFS.map((d) => bakeClip(d));
+      // volta para a pose parada antes de exportar
+      current = idlePose(0);
+      applyPose(current);
+      character.updateMatrixWorld(true);
+    
+      const exporter = new THREE.GLTFExporter();
+      exporter.parse(
+        character,
+        (result) => {
+          const blob = new Blob([result], { type: 'model/gltf-binary' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'boneco3d.glb';
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          setTimeout(() => URL.revokeObjectURL(url), 4000);
+        },
+        (err) => console.error('Erro ao exportar GLB:', err),
+        { binary: true, animations: clips }
+      );
+    }
+    
+    // ============================================================
+    //  LOOP PRINCIPAL
+    // ============================================================
+    const clock = new THREE.Clock();
+    let frozen = false;   // usado apenas pela API de depuração
+    
+    function animate() {
+      requestAnimationFrame(animate);
+      const rawDt = clock.getDelta();
+      const dt = Math.min(rawDt, 0.1);        // suavização (independente de quedas de FPS)
+      state.time += dt;
+    
+      if (!frozen) {
+        // ---- Determina pose-alvo ----
+        let target;
+        if (state.jumping) {
+          state.jumpT += Math.min(rawDt, 0.25);  // tempo real do pulo
+          const prog = state.jumpT / JUMP_DURATION;
+          if (prog >= 1) {
+            state.jumping = false;
+            state.jumpT = 0;
+          }
+          target = jumpPose(Math.min(prog, 1));
+        } else if (state.mode === 'crouch') {
+          target = crouchPose(state.time);
+        } else if (state.mode === 'walk') {
+          target = walkPose(state.time);
+        } else {
+          target = idlePose(state.time);
+        }
+    
+        // ---- Interpolação suave da pose atual até a alvo ----
+        const rate = state.jumping ? 26 : state.blend;
+        const alpha = 1 - Math.exp(-rate * dt);
+        current = lerpPose(current, target, alpha);
+        applyPose(current);
+      }
+    
+      controls.update();
+      renderer.render(scene, camera);
+    }
+    
+    // ============================================================
+    //  CONTROLES / INTERFACE
+    // ============================================================
+    const buttons = document.querySelectorAll('.btn');
+    
+    function setActive(action) {
+      buttons.forEach((b) => b.classList.toggle('active', b.dataset.action === action));
+    }
+    
+    function doJump() {
+      if (state.jumping) return;
+      state.jumping = true;
+      state.jumpT = 0;
+    }
+    
+    function toggleCrouch() {
+      if (state.jumping) return;
+      state.crouching = !state.crouching;
+      state.mode = state.crouching ? 'crouch' : 'idle';
+      setActive(state.crouching ? 'crouch' : 'idle');
+    }
+    
+    function setWalk(on) {
+      if (state.jumping) return;
+      if (on) {
+        state.crouching = false;
+        state.mode = 'walk';
+        setActive('walk');
+      } else if (state.mode === 'walk') {
+        state.mode = 'idle';
+        setActive('idle');
+      }
+    }
+    
+    buttons.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const a = btn.dataset.action;
+        if (a === 'jump') { doJump(); }
+        else if (a === 'crouch') { toggleCrouch(); }
+        else if (a === 'walk') { setWalk(state.mode !== 'walk'); }
+        else { state.mode = 'idle'; state.crouching = false; setActive('idle'); }
+      });
+    });
+    
+    const downloadBtn = document.getElementById('downloadBtn');
+    if (downloadBtn) {
+      downloadBtn.addEventListener('click', () => {
+        const original = downloadBtn.querySelector('span:nth-child(2)');
+        if (original) original.textContent = 'Gerando...';
+        setTimeout(() => {
+          try { downloadGLB(); } catch (err) { console.error(err); }
+          if (original) original.textContent = 'Baixar .GLB';
+        }, 40);
+      });
+    }
+    
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') { e.preventDefault(); doJump(); }
+      else if (e.code === 'KeyC') { toggleCrouch(); }
+      else if (e.code === 'KeyW') { setWalk(state.mode !== 'walk'); }
+      else if (e.code === 'KeyI' || e.code === 'Escape') { state.mode = 'idle'; state.crouching = false; setActive('idle'); }
+    });
+    
+    // ---------- Responsivo ----------
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+    
+    // ---------- Inicia ----------
+    applyPose(current);
+    animate();
+    
+    // esconde o loader
+    const loader = document.getElementById('loader');
+    setTimeout(() => loader.classList.add('hidden'), 350);
+    
+    // expõe para debug
+    window.__character = {
+      character, J, state, camera, controls, scene, THREE,
+      // congela a animação num quadro específico (útil para capturas)
+      freezePose(name, prog = 0) {
+        frozen = true;
+        let p;
+        if (name === 'jump')        p = jumpPose(prog);
+        else if (name === 'crouch') p = crouchPose(0);
+        else if (name === 'walk')   p = walkPose(prog * 10);
+        else                        p = idlePose(0);
+        current = p;
+        applyPose(p);
+      },
+      unfreeze() { frozen = false; },
+      // gera o GLB e devolve o ArrayBuffer (usado em testes)
+      exportGLB() {
+        const clips = CLIP_DEFS.map((d) => bakeClip(d));
+        current = idlePose(0);
+        applyPose(current);
+        character.updateMatrixWorld(true);
+        return new Promise((resolve, reject) => {
+          new THREE.GLTFExporter().parse(character, resolve, reject, { binary: true, animations: clips });
+        });
+      },
+    };
+    
+  </script>
+</body>
+</html>
